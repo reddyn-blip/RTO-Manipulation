@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Risk Console</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.13.11/css/jquery.dataTables.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.13.11/js/jquery.dataTables.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12161c;
+    --surface: #1a2029;
+    --surface-raised: #212836;
+    --border: #2a3140;
+    --text: #e8eaed;
+    --text-muted: #8b95a5;
+    --text-faint: #5a6373;
+    --critical: #e2543a;
+    --high: #d9a441;
+    --medium: #4a8fd1;
+    --low: #4fa686;
+    --unknown: #5a6373;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Public Sans', sans-serif;
+    font-size:14px;
+    line-height:1.5;
+  }
+  .mono{ font-family:'Spline Sans Mono', monospace; }
+
+  /* ---- shell ---- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 28px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  .brand{ display:flex; flex-direction:column; gap:2px; }
+  .brand h1{ margin:0; font-size:19px; font-weight:700; letter-spacing:-0.01em; }
+  .brand span{ color:var(--text-muted); font-size:12.5px; }
+  .upload-row{ display:flex; gap:10px; align-items:center; }
+  .file-slot{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 12px;
+    font-size:12.5px;
+    color:var(--text-muted);
+  }
+  .file-slot.filled{ color:var(--low); border-color:#2c4a3f; }
+  .file-slot input{ display:none; }
+  .file-slot label{ cursor:pointer; color:var(--text); font-weight:600; }
+  .file-slot .count{ color:var(--text-faint); }
+
+  main{ padding:24px 28px 60px; max-width:1400px; margin:0 auto; }
+
+  .empty-state{
+    margin-top:80px;
+    text-align:center;
+    color:var(--text-muted);
+    max-width:480px;
+    margin-left:auto; margin-right:auto;
+  }
+  .empty-state h2{ color:var(--text); font-size:17px; margin-bottom:8px; }
+  .empty-state p{ font-size:13px; }
+
+  /* ---- kpi strip ---- */
+  .kpi-strip{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:1px;
+    background:var(--border);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:22px;
+  }
+  .kpi{ background:var(--surface); padding:16px 20px; }
+  .kpi .label{ color:var(--text-muted); font-size:12px; }
+  .kpi .value{ font-size:26px; font-weight:600; margin-top:6px; }
+  .kpi .sub{ font-size:11.5px; color:var(--text-faint); margin-top:4px; }
+
+  /* ---- panels ---- */
+  .grid-2{ display:grid; grid-template-columns:1.1fr 1fr; gap:16px; margin-bottom:16px; }
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:18px 20px;
+  }
+  .panel h3{ margin:0 0 2px; font-size:13.5px; font-weight:600; }
+  .panel .panel-sub{ color:var(--text-faint); font-size:11.5px; margin-bottom:14px; }
+  .chart-wrap{ position:relative; height:260px; }
+
+  /* ---- filters ---- */
+  .filters{ display:flex; gap:20px; flex-wrap:wrap; margin-bottom:16px; }
+  .filter-group{ display:flex; flex-direction:column; gap:6px; }
+  .filter-group .fg-label{ font-size:11px; color:var(--text-faint); text-transform:none; }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:6px; max-width:520px; }
+  .chip{
+    padding:5px 10px;
+    border-radius:5px;
+    border:1px solid var(--border);
+    background:var(--surface-raised);
+    color:var(--text-muted);
+    font-size:12px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .chip.active{ color:var(--text); border-color:var(--medium); background:#1b2a3a; }
+  .chip .swatch{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; }
+
+  /* ---- table ---- */
+  .table-panel{ background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .table-head{ display:flex; justify-content:space-between; align-items:center; padding:16px 20px 0; }
+  .table-scroll{ overflow-x:auto; max-height:520px; overflow-y:auto; margin-top:14px; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  th{
+    text-align:left; padding:8px 14px; color:var(--text-faint);
+    border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface);
+    font-weight:500; white-space:nowrap;
+  }
+  td{ padding:8px 14px; border-bottom:1px solid #1f2530; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+  tr:hover td{ background:#1d2431; }
+  .badge{ padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .badge-critical{ background:#3a2420; color:var(--critical); }
+  .badge-high{ background:#332a18; color:var(--high); }
+  .badge-medium{ background:#1c2b3a; color:var(--medium); }
+  .badge-low{ background:#1c3229; color:var(--low); }
+  .badge-unknown{ background:#232a35; color:var(--unknown); }
+  .flag-yes{ color:var(--critical); font-weight:600; }
+  .flag-no{ color:var(--text-faint); }
+  .rec-link{ color:var(--medium); text-decoration:none; }
+  .rec-link:hover{ text-decoration:underline; }
+
+  ::-webkit-scrollbar{ height:8px; width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+
+  .hint{ font-size:11px; color:var(--text-faint); }
+  .export-btn{
+    background:var(--surface-raised); color:var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:6px 12px; font-size:12px; font-family:inherit; cursor:pointer;
+  }
+  .export-btn:hover{ border-color:var(--medium); }
+
+  /* ---- detail table (DataTables) ---- */
+  .dt-filterbar{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    gap:12px;
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .dt-filterbar .fb-item{ display:flex; flex-direction:column; gap:5px; }
+  .dt-filterbar label{ font-size:10.5px; color:var(--text-faint); letter-spacing:.02em; }
+  .dt-filterbar select{
+    background:var(--surface-raised); color:var(--text); border:1px solid var(--border);
+    border-radius:5px; padding:6px 8px; font-size:12px; font-family:inherit;
+  }
+  #detailTable_wrapper{ padding:14px 20px 20px; }
+  .dataTables_wrapper .dataTables_length,
+  .dataTables_wrapper .dataTables_filter,
+  .dataTables_wrapper .dataTables_info,
+  .dataTables_wrapper .dataTables_paginate{ color:var(--text-muted); font-size:12px; }
+  .dataTables_wrapper .dataTables_length select,
+  .dataTables_wrapper .dataTables_filter input{
+    background:var(--surface-raised); color:var(--text); border:1px solid var(--border);
+    border-radius:5px; padding:5px 8px; font-family:inherit; font-size:12px;
+  }
+  .dataTables_wrapper .dataTables_filter input{ margin-left:6px; }
+  .dataTables_wrapper .dataTables_paginate .paginate_button{
+    color:var(--text-muted) !important; border:1px solid transparent; border-radius:5px; padding:4px 9px; margin-left:2px;
+  }
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current{
+    background:var(--surface-raised) !important; border-color:var(--medium) !important; color:var(--text) !important;
+  }
+  .dataTables_wrapper .dataTables_paginate .paginate_button:hover{
+    background:var(--surface-raised) !important; color:var(--text) !important; border-color:var(--border) !important;
+  }
+  .dataTables_wrapper .dataTables_paginate .paginate_button.disabled{ color:var(--text-faint) !important; }
+  table.dataTable{ border-collapse:collapse !important; font-size:12px; }
+  table.dataTable thead th{
+    background:var(--surface); color:var(--text-faint); border-bottom:1px solid var(--border) !important;
+    padding:9px 12px !important; font-weight:500; white-space:nowrap;
+  }
+  table.dataTable thead th.sorting:after,
+  table.dataTable thead th.sorting_asc:after,
+  table.dataTable thead th.sorting_desc:after{
+    opacity:.55; right:8px;
+  }
+  table.dataTable tbody td{
+    padding:8px 12px !important; border-bottom:1px solid #1f2530 !important; color:var(--text);
+    max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  table.dataTable tbody tr{ background:var(--surface) !important; }
+  table.dataTable tbody tr:hover td{ background:#1d2431 !important; }
+  td.evidence-cell, td.summary-cell{ white-space:normal; max-width:240px; line-height:1.4; }
+  .flag-badge{ padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .flag-badge.yes{ background:#3a2420; color:var(--critical); }
+  .flag-badge.no{ background:#232a35; color:var(--text-faint); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Delivery Risk Console</h1>
+    <span>Runs entirely in your browser — nothing is uploaded or stored</span>
+  </div>
+  <div class="upload-row">
+    <div class="file-slot" id="inputSlot">
+      <label for="inputFile">Input file</label>
+      <input type="file" id="inputFile" accept=".xlsx,.csv">
+      <span class="count" id="inputCount">none loaded</span>
+    </div>
+    <div class="file-slot" id="outputSlot">
+      <label for="outputFile">Output file</label>
+      <input type="file" id="outputFile" accept=".xlsx,.csv">
+      <span class="count" id="outputCount">none loaded</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="emptyState" class="empty-state">
+    <h2>Load your two files to begin</h2>
+    <p>Upload the raw Input file (shipment + geo attributes) and the Output file (call-analysis flags). The dashboard joins them on shipment ID and renders entirely on this page — refresh clears everything.</p>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <div class="kpi-strip" id="kpiStrip"></div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <div class="fg-label">Geo distance bucket</div>
+        <div class="chip-row" id="geoFilters"></div>
+      </div>
+      <div class="filter-group">
+        <div class="fg-label">Overall risk</div>
+        <div class="chip-row" id="riskFilters"></div>
+      </div>
+      <div class="filter-group">
+        <div class="fg-label">Flag type</div>
+        <div class="chip-row" id="flagFilters"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Risk level by geo distance bucket</h3>
+        <div class="panel-sub">Count of flagged rows, stacked by overall risk</div>
+        <div class="chart-wrap"><canvas id="geoRiskChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Flag prevalence</h3>
+        <div class="panel-sub">Rows where the flag fired, out of rows shown</div>
+        <div class="chart-wrap"><canvas id="flagChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-panel">
+      <div class="table-head">
+        <h3 style="margin:0;font-size:13.5px;">Shipments &times; flags</h3>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <button id="exportBtn" class="export-btn">Export CSV</button>
+        </div>
+      </div>
+      <div class="dt-filterbar" id="dtFilterbar"></div>
+      <table id="detailTable" class="display" style="width:100%;">
+        <thead><tr id="detailHeadRow"></tr></thead>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+const FLAGS = [
+  { key: 'Fake/Fraud',   label: 'Fake / fraud',    conf: 'Fake Confidence' },
+  { key: 'FB/IG/3P',     label: 'FB / IG / 3P ad',  conf: 'FB Confidence' },
+  { key: 'Cancellation', label: 'Cancellation',    conf: 'Cancel Confidence' },
+  { key: 'Reschedule',   label: 'Reschedule',      conf: 'Reschedule Confidence', derived: true },
+  { key: 'OTP',          label: 'OTP share',       conf: 'OTP Confidence' },
+  { key: 'Aggression',   label: 'Aggression',      conf: 'Aggr Confidence' },
+  { key: 'Bribe',        label: 'Bribe',           conf: 'Bribe Confidence' },
+];
+
+const RISK_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+const RISK_COLOR = { CRITICAL: '#e2543a', HIGH: '#d9a441', MEDIUM: '#4a8fd1', LOW: '#4fa686', UNKNOWN: '#5a6373' };
+
+let inputRows = null;
+let outputRows = null;
+let joined = [];
+let geoBuckets = [];
+let riskLevels = [];
+let filters = { geo: new Set(), risk: new Set(), flag: 'all' };
+let geoChart, flagChartInst;
+
+function norm(v){ return (v === undefined || v === null) ? '' : String(v).trim(); }
+function normKey(v){ return norm(v).toLowerCase(); }
+
+function readFile(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        resolve(XLSX.utils.sheet_to_json(sheet, { defval: '' }));
+      } catch(err){ reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function findKey(row, candidates){
+  const keys = Object.keys(row);
+  for(const c of candidates){
+    const hit = keys.find(k => normKey(k) === normKey(c));
+    if(hit) return hit;
+  }
+  return null;
+}
+
+function buildJoin(){
+  if(!inputRows || !outputRows) return;
+
+  const inShipKey = findKey(inputRows[0], ['shipmentid', 'shipment id']);
+  const outShipKey = findKey(outputRows[0], ['shipment id', 'shipmentid']);
+  const geoKey = findKey(inputRows[0], ['geo_distance_bucket']);
+
+  const inputByShip = new Map();
+  inputRows.forEach(r => {
+    const id = normKey(r[inShipKey]);
+    if(id) inputByShip.set(id, r);
+  });
+
+  joined = outputRows.map(r => {
+    const id = normKey(r[outShipKey]);
+    const inRow = inputByShip.get(id) || {};
+    const rowFlags = {};
+    FLAGS.forEach(f => {
+      if(f.derived){
+        rowFlags[f.key] = Number(r[f.conf] || 0) > 0;
+      } else {
+        rowFlags[f.key] = norm(r[f.key]).toUpperCase() === 'YES';
+      }
+    });
+    return {
+      shipmentId: norm(r[outShipKey]),
+      geo: geoKey ? (norm(inRow[geoKey]) || 'Unknown') : 'Unknown',
+      overallRisk: norm(r['Overall Risk']).toUpperCase() || 'UNKNOWN',
+      overallScore: Number(r['Overall Score'] || 0),
+      summary: norm(r['Summary']),
+      recording: norm(inRow['recordinglink']),
+      sellerType: norm(inRow['seller_type']),
+      shipmentType: norm(inRow['ekl_shipment_type']),
+      flags: rowFlags,
+      fakeConf: norm(r['Fake Confidence']),
+      fakeEvidence: norm(r['Fake Evidence']),
+      fbConf: norm(r['FB Confidence']),
+      fbEvidence: norm(r['FB Evidence']),
+      cancelConf: norm(r['Cancel Confidence']),
+      cancelEvidence: norm(r['Cancel Evidence']),
+      rescheduleConf: norm(r['Reschedule Confidence']),
+      rescheduleEvidence: norm(r['Reschedule Evidence']),
+      otpConf: norm(r['OTP Confidence']),
+      otpEvidence: norm(r['OTP Evidence']),
+      aggrConf: norm(r['Aggr Confidence']),
+      aggrEvidence: norm(r['Aggr Evidence']),
+      bribeConf: norm(r['Bribe Confidence']),
+      bribeEvidence: norm(r['Bribe Evidence']),
+    };
+  });
+
+  geoBuckets = [...new Set(joined.map(r => r.geo))].sort();
+  riskLevels = [...new Set(joined.map(r => r.overallRisk))]
+    .sort((a,b) => {
+      const ia = RISK_ORDER.indexOf(a), ib = RISK_ORDER.indexOf(b);
+      return (ia<0?99:ia) - (ib<0?99:ib);
+    });
+
+  filters = { geo: new Set(geoBuckets), risk: new Set(riskLevels), flag: 'all' };
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  renderFilters();
+  renderAll();
+  initDetailTable(collapseByShipment(joined));
+}
+
+function riskClass(risk){
+  const r = risk.toLowerCase();
+  return ['critical','high','medium','low'].includes(r) ? 'badge-'+r : 'badge-unknown';
+}
+function riskColor(risk){ return RISK_COLOR[risk] || RISK_COLOR.UNKNOWN; }
+
+function renderFilters(){
+  const geoWrap = document.getElementById('geoFilters');
+  geoWrap.innerHTML = '';
+  geoBuckets.forEach(g => {
+    const chip = document.createElement('div');
+    chip.className = 'chip active';
+    chip.textContent = g;
+    chip.onclick = () => { toggle(filters.geo, g, chip); renderAll(); };
+    geoWrap.appendChild(chip);
+  });
+
+  const riskWrap = document.getElementById('riskFilters');
+  riskWrap.innerHTML = '';
+  riskLevels.forEach(r => {
+    const chip = document.createElement('div');
+    chip.className = 'chip active';
+    chip.innerHTML = `<span class="swatch" style="background:${riskColor(r)}"></span>${r}`;
+    chip.onclick = () => { toggle(filters.risk, r, chip); renderAll(); };
+    riskWrap.appendChild(chip);
+  });
+
+  const flagWrap = document.getElementById('flagFilters');
+  flagWrap.innerHTML = '';
+  const allChip = document.createElement('div');
+  allChip.className = 'chip active';
+  allChip.textContent = 'All';
+  allChip.onclick = () => { filters.flag = 'all'; [...flagWrap.children].forEach(c=>c.classList.remove('active')); allChip.classList.add('active'); renderAll(); };
+  flagWrap.appendChild(allChip);
+  FLAGS.forEach(f => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = f.label;
+    chip.onclick = () => {
+      filters.flag = f.key;
+      [...flagWrap.children].forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      renderAll();
+    };
+    flagWrap.appendChild(chip);
+  });
+}
+
+function toggle(set, val, chip){
+  if(set.has(val)){ set.delete(val); chip.classList.remove('active'); }
+  else { set.add(val); chip.classList.add('active'); }
+}
+
+function filteredRows(){
+  return joined.filter(r =>
+    filters.geo.has(r.geo) &&
+    filters.risk.has(r.overallRisk) &&
+    (filters.flag === 'all' || r.flags[filters.flag])
+  );
+}
+
+function collapseByShipment(rows){
+  const groups = new Map();
+  rows.forEach(r => {
+    const g = groups.get(r.shipmentId);
+    if(!g || r.overallScore > g.overallScore) groups.set(r.shipmentId, r);
+  });
+  const counts = new Map();
+  rows.forEach(r => counts.set(r.shipmentId, (counts.get(r.shipmentId) || 0) + 1));
+  return [...groups.values()]
+    .map(r => ({ ...r, callCount: counts.get(r.shipmentId) }))
+    .sort((a,b) => b.overallScore - a.overallScore);
+}
+
+function renderAll(){
+  const rows = filteredRows();
+  renderKPIs(rows);
+  renderGeoRiskChart(rows);
+  renderFlagChart(rows);
+}
+
+function renderKPIs(rows){
+  const uniqueShipments = new Set(rows.map(r => r.shipmentId)).size;
+  const critical = rows.filter(r => r.overallRisk === 'CRITICAL').length;
+  const avgScore = rows.length ? Math.round(rows.reduce((a,r)=>a+r.overallScore,0)/rows.length) : 0;
+  const geoCounts = {};
+  rows.forEach(r => geoCounts[r.geo] = (geoCounts[r.geo]||0)+1);
+  const topGeo = Object.entries(geoCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  const kpis = [
+    { label: 'Flagged rows', value: rows.length, sub: `${joined.length} total loaded` },
+    { label: 'Unique shipments', value: uniqueShipments, sub: 'in current filter' },
+    { label: 'Critical risk rows', value: critical, sub: rows.length ? Math.round(critical/rows.length*100)+'% of shown' : '—' },
+    { label: 'Avg overall score', value: avgScore, sub: topGeo ? `Top bucket: ${topGeo[0]}` : '—' },
+  ];
+  document.getElementById('kpiStrip').innerHTML = kpis.map(k => `
+    <div class="kpi">
+      <div class="label">${k.label}</div>
+      <div class="value mono">${k.value}</div>
+      <div class="sub">${k.sub}</div>
+    </div>
+  `).join('');
+}
+
+function renderGeoRiskChart(rows){
+  const data = {};
+  geoBuckets.forEach(g => data[g] = {});
+  rows.forEach(r => {
+    data[r.geo] = data[r.geo] || {};
+    data[r.geo][r.overallRisk] = (data[r.geo][r.overallRisk] || 0) + 1;
+  });
+  const activeGeo = geoBuckets.filter(g => filters.geo.has(g));
+  const datasets = riskLevels.filter(r => filters.risk.has(r)).map(r => ({
+    label: r,
+    data: activeGeo.map(g => (data[g] && data[g][r]) || 0),
+    backgroundColor: riskColor(r),
+    stack: 's',
+  }));
+
+  const ctx = document.getElementById('geoRiskChart');
+  if(geoChart) geoChart.destroy();
+  geoChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: activeGeo, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, grid: { display:false }, ticks:{ color:'#8b95a5', font:{size:11} } },
+        y: { stacked: true, grid: { color:'#2a3140' }, ticks:{ color:'#8b95a5', font:{size:11} } },
+      },
+      plugins: { legend: { labels: { color:'#e8eaed', font:{size:11} } } },
+    },
+  });
+}
+
+function renderFlagChart(rows){
+  const counts = FLAGS.map(f => rows.filter(r => r.flags[f.key]).length);
+  const ctx = document.getElementById('flagChart');
+  if(flagChartInst) flagChartInst.destroy();
+  flagChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: FLAGS.map(f => f.label),
+      datasets: [{ data: counts, backgroundColor: '#4a8fd1', borderRadius: 3 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color:'#2a3140' }, ticks:{ color:'#8b95a5', font:{size:11} } },
+        y: { grid: { display:false }, ticks:{ color:'#e8eaed', font:{size:11.5} } },
+      },
+      plugins: { legend: { display:false } },
+    },
+  });
+}
+
+const DETAIL_COLUMNS = [
+  { title: 'Shipment ID',          data: 'shipmentId', cls: 'mono' },
+  { title: 'Fake/Fraud',           data: 'flags.Fake/Fraud',   type: 'flag' },
+  { title: 'Fake Confidence',      data: 'fakeConf',   cls: 'mono' },
+  { title: 'Fake Evidence',        data: 'fakeEvidence', cls: 'evidence-cell' },
+  { title: 'FB/IG/3P',             data: 'flags.FB/IG/3P',     type: 'flag' },
+  { title: 'FB Confidence',        data: 'fbConf',     cls: 'mono' },
+  { title: 'FB Evidence',          data: 'fbEvidence',   cls: 'evidence-cell' },
+  { title: 'Cancellation',         data: 'flags.Cancellation', type: 'flag' },
+  { title: 'Cancel Confidence',    data: 'cancelConf', cls: 'mono' },
+  { title: 'Cancel Evidence',      data: 'cancelEvidence', cls: 'evidence-cell' },
+  { title: 'Reschedule Confidence',data: 'rescheduleConf', cls: 'mono' },
+  { title: 'Reschedule Evidence',  data: 'rescheduleEvidence', cls: 'evidence-cell' },
+  { title: 'OTP',                  data: 'flags.OTP',          type: 'flag' },
+  { title: 'OTP Confidence',       data: 'otpConf',     cls: 'mono' },
+  { title: 'OTP Evidence',         data: 'otpEvidence',  cls: 'evidence-cell' },
+  { title: 'Aggression',           data: 'flags.Aggression',   type: 'flag' },
+  { title: 'Aggr Confidence',      data: 'aggrConf',    cls: 'mono' },
+  { title: 'Aggr Evidence',        data: 'aggrEvidence', cls: 'evidence-cell' },
+  { title: 'Bribe',                data: 'flags.Bribe',        type: 'flag' },
+  { title: 'Bribe Confidence',     data: 'bribeConf',   cls: 'mono' },
+  { title: 'Bribe Evidence',       data: 'bribeEvidence', cls: 'evidence-cell' },
+  { title: 'Overall Risk',         data: 'overallRisk', type: 'risk' },
+  { title: 'Overall Score',        data: 'overallScore', cls: 'mono' },
+  { title: 'Geo Distance Bucket',  data: 'geo' },
+  { title: 'Summary',              data: 'summary', cls: 'summary-cell' },
+];
+
+const FILTERABLE = [
+  { title: 'Fake/Fraud', kind: 'flag' },
+  { title: 'FB/IG/3P', kind: 'flag' },
+  { title: 'Cancellation', kind: 'flag' },
+  { title: 'OTP', kind: 'flag' },
+  { title: 'Aggression', kind: 'flag' },
+  { title: 'Bribe', kind: 'flag' },
+  { title: 'Overall Risk', kind: 'risk' },
+  { title: 'Geo Distance Bucket', kind: 'geo' },
+];
+
+function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+let dataTable = null;
+
+function initDetailTable(rows){
+  document.getElementById('detailHeadRow').innerHTML =
+    '<th>#</th>' + DETAIL_COLUMNS.map(c => `<th>${c.title}</th>`).join('');
+
+  const columns = [
+    { data: null, orderable: false, render: (d, t, r, meta) => meta.row + 1 },
+    ...DETAIL_COLUMNS.map(c => ({
+      data: c.data,
+      className: c.cls || '',
+      render: (data, type) => {
+        if(type !== 'display') return data;
+        if(c.type === 'flag') return `<span class="flag-badge ${data ? 'yes':'no'}">${data ? 'YES':'NO'}</span>`;
+        if(c.type === 'risk') return `<span class="badge ${riskClass(data)}">${data}</span>`;
+        return data;
+      },
+    })),
+  ];
+
+  if(dataTable){ dataTable.destroy(); }
+  dataTable = $('#detailTable').DataTable({
+    data: rows,
+    columns,
+    pageLength: 25,
+    order: [[ DETAIL_COLUMNS.findIndex(c=>c.title==='Overall Score') + 1, 'desc' ]],
+  });
+
+  renderFilterbar(rows);
+}
+
+function renderFilterbar(rows){
+  const bar = document.getElementById('dtFilterbar');
+  bar.innerHTML = '';
+  FILTERABLE.forEach(f => {
+    const colIdx = DETAIL_COLUMNS.findIndex(c => c.title === f.title) + 1; // +1 for '#' col
+    let values;
+    if(f.kind === 'flag') values = ['YES', 'NO'];
+    else if(f.kind === 'risk') values = riskLevels;
+    else values = geoBuckets;
+
+    const item = document.createElement('div');
+    item.className = 'fb-item';
+    item.innerHTML = `<label>${f.title.toUpperCase()}</label>
+      <select><option value="">All</option>${values.map(v=>`<option value="${v}">${v}</option>`).join('')}</select>`;
+    item.querySelector('select').addEventListener('change', (e) => {
+      const v = e.target.value;
+      dataTable.column(colIdx).search(v ? '^'+escapeRegex(v)+'$' : '', true, false).draw();
+    });
+    bar.appendChild(item);
+  });
+}
+
+function exportCSV(){
+  if(!dataTable) return;
+  const rows = dataTable.rows({ search: 'applied' }).data().toArray();
+  const labels = ['Shipment ID', ...DETAIL_COLUMNS.slice(1).map(c=>c.title)];
+  const esc = (v) => `"${String(v === undefined ? '' : v).replace(/"/g,'""')}"`;
+  const getVal = (row, path) => path.split('.').reduce((o,k)=>(o||{})[k], row);
+  const lines = [labels.map(esc).join(',')];
+  rows.forEach(r => {
+    lines.push([
+      r.shipmentId,
+      ...DETAIL_COLUMNS.slice(1).map(c => {
+        const v = getVal(r, c.data);
+        return c.type === 'flag' ? (v ? 'YES':'NO') : v;
+      }),
+    ].map(esc).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'shipments_x_flags.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+document.getElementById('inputFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  inputRows = await readFile(file);
+  document.getElementById('inputCount').textContent = `${inputRows.length} rows`;
+  document.getElementById('inputSlot').classList.add('filled');
+  buildJoin();
+});
+
+document.getElementById('outputFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  outputRows = await readFile(file);
+  document.getElementById('outputCount').textContent = `${outputRows.length} rows`;
+  document.getElementById('outputSlot').classList.add('filled');
+  buildJoin();
+});
+</script>
+</body>
+</html>
