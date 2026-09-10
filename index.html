@@ -14,8 +14,10 @@
     --raised-2:#EEF1F6;
     --ink:#14171F;
     --ink-soft:#5B6272;
+    --ink-faint:#9AA0AF;
     --line:#E1E4EA;
     --blue:#2874F0;
+    --blue-tint:#EAF1FE;
     --yellow:#C9791E;
     --critical:#C6362B;
     --critical-bg:#FBE7E5;
@@ -27,6 +29,7 @@
     --low-bg:#E1F3EA;
     --neutral:#8B90A0;
     --neutral-bg:#EDEEF2;
+    --content-max:1440px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -39,22 +42,27 @@
     min-height:100vh;
   }
   .mono{font-family:'IBM Plex Mono',monospace;}
+  .container{max-width:var(--content-max);margin:0 auto;padding:0 32px;}
+
+  a, button, input, select, .chip, .row, .flag, .upload-btn, .page-btn{
+    transition:background-color .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+  }
 
   header.top{
-    padding:28px 32px 20px;
+    padding:30px 0 22px;
     border-bottom:1px solid var(--line);
     background:var(--paper-raised);
   }
   header.top h1{
-    margin:0 0 4px;
-    font-size:22px;
-    font-weight:600;
-    letter-spacing:-0.01em;
+    margin:0 0 5px;
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:-0.02em;
   }
   header.top p.sub{
     margin:0;
     color:var(--ink-soft);
-    font-size:13px;
+    font-size:13.5px;
   }
   .top-row{
     display:flex;
@@ -65,38 +73,50 @@
   }
   .stats{
     display:flex;
+    align-items:center;
     gap:22px;
-    margin-top:16px;
+    margin-top:20px;
     flex-wrap:wrap;
   }
-  .stat{
-    display:flex;
-    align-items:baseline;
-    gap:7px;
-  }
-  .stat .n{
+  .stat-total{display:flex;align-items:baseline;gap:8px;}
+  .stat-total .n{
     font-family:'IBM Plex Mono',monospace;
-    font-size:20px;
+    font-size:24px;
     font-weight:600;
+    letter-spacing:-0.01em;
   }
-  .stat .l{
+  .stat-total .l{
     color:var(--ink-soft);
     font-size:12.5px;
   }
+  .stat-chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .stat-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:5px 10px;
+    border-radius:3px;
+    font-size:12px;
+    font-weight:500;
+  }
+  .stat-chip .n{font-family:'IBM Plex Mono',monospace;font-weight:600;}
   .dot{
     width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;
   }
 
   .upload-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
     background:var(--blue);
     color:#FFFFFF;
     border:none;
-    padding:10px 18px;
+    padding:10px 16px;
     font-family:'IBM Plex Sans',sans-serif;
     font-size:13.5px;
     font-weight:500;
     cursor:pointer;
-    border-radius:2px;
+    border-radius:3px;
   }
   .upload-btn:hover{background:#1f5fd1;}
   .upload-btn.secondary{
@@ -104,41 +124,57 @@
     color:var(--blue);
     border:1px solid var(--blue);
   }
-  .upload-btn.secondary:hover{background:#EAF1FE;}
+  .upload-btn.secondary:hover{background:var(--blue-tint);}
   input[type=file]{display:none;}
   .upload-group{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
   .file-status{
-    margin-top:8px;
+    margin-top:10px;
     font-size:11.5px;
     color:var(--ink-soft);
   }
+  .status-dot{
+    display:inline-block;
+    width:6px;height:6px;
+    border-radius:50%;
+    margin-right:6px;
+    vertical-align:middle;
+  }
+  .status-dot.ok{background:var(--low);}
+  .status-dot.warn{background:var(--high);}
+  .status-dot.pending{background:var(--neutral);}
 
-  main{padding:24px 32px 60px;}
+  main{max-width:var(--content-max);margin:0 auto;padding:28px 32px 60px;}
+
+  .section-head{margin-bottom:16px;}
+  .section-head h2{font-size:15px;font-weight:600;margin:0 0 3px;}
+  .section-head p{font-size:12.5px;color:var(--ink-soft);margin:0;}
 
   .empty{
     text-align:left;
     padding:60px 0;
     max-width:480px;
   }
-  .empty h2{font-size:17px;margin:0 0 8px;}
+  .empty h2{font-size:18px;margin:0 0 8px;}
   .empty p{color:var(--ink-soft);margin:0 0 18px;}
 
   .toolbar{
     display:flex;
     flex-wrap:wrap;
-    gap:10px 14px;
+    gap:10px 12px;
     align-items:center;
-    padding:14px 0 18px;
-    border-bottom:1px solid var(--line);
-    margin-bottom:14px;
+    padding:14px 16px;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    margin-bottom:16px;
   }
   .toolbar input[type=text]{
     font-family:'IBM Plex Sans',sans-serif;
     font-size:13px;
     padding:8px 10px;
     border:1px solid var(--line);
-    background:var(--paper-raised);
-    border-radius:2px;
+    background:var(--paper);
+    border-radius:3px;
     min-width:200px;
     color:var(--ink);
   }
@@ -147,16 +183,16 @@
     font-size:13px;
     padding:8px 10px;
     border:1px solid var(--line);
-    background:var(--paper-raised);
-    border-radius:2px;
+    background:var(--paper);
+    border-radius:3px;
     color:var(--ink);
   }
   .score-range{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);}
-  .score-range input{width:52px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px 7px;border:1px solid var(--line);background:var(--paper-raised);border-radius:2px;color:var(--ink);}
+  .score-range input{width:52px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px 7px;border:1px solid var(--line);background:var(--paper);border-radius:3px;color:var(--ink);}
 
   .chip{
     border:1px solid var(--line);
-    background:var(--paper-raised);
+    background:var(--paper);
     color:var(--ink-soft);
     padding:6px 11px;
     font-size:12.5px;
@@ -170,20 +206,23 @@
 
   .reset-link{
     font-size:12.5px;
-    color:var(--ink-soft);
-    text-decoration:underline;
+    color:var(--blue);
+    text-decoration:none;
+    font-weight:500;
     cursor:pointer;
     background:none;
     border:none;
     padding:0;
     margin-left:auto;
   }
+  .reset-link:hover{text-decoration:underline;}
 
   .table-wrap{
     overflow:auto;
     max-height:800px;
     border:1px solid var(--line);
-    border-radius:2px;
+    border-radius:3px;
+    background:var(--paper-raised);
   }
   table{
     width:100%;
@@ -209,12 +248,20 @@
     border-bottom:1px solid var(--line);
     cursor:pointer;
   }
-  tbody tr.row:hover{background:var(--paper-raised);}
+  tbody tr.row:hover{background:var(--raised-2);}
+  tbody tr.row.expanded{background:var(--raised-2);}
   tbody td{
-    padding:10px;
+    padding:11px 10px;
     vertical-align:middle;
   }
   td.id{font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .chevron{
+    display:inline-block;
+    width:14px;
+    color:var(--ink-faint);
+    transition:transform .15s ease;
+  }
+  tr.row.expanded .chevron{transform:rotate(90deg);color:var(--blue);}
   td.summary-cell{color:var(--ink-soft);font-size:12.5px;max-width:340px;}
   .truncate{
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:340px;
@@ -225,7 +272,7 @@
     font-size:11px;
     font-weight:600;
     padding:3px 8px;
-    border-radius:2px;
+    border-radius:3px;
     font-family:'IBM Plex Mono',monospace;
   }
   .risk-CRITICAL{background:var(--critical-bg);color:var(--critical);}
@@ -242,7 +289,7 @@
   .flags{display:flex;gap:4px;}
   .flag{
     width:20px;height:20px;
-    border-radius:2px;
+    border-radius:3px;
     font-size:10px;
     font-weight:600;
     display:flex;align-items:center;justify-content:center;
@@ -310,7 +357,7 @@
     padding:6px 14px;
     font-size:12.5px;
     font-family:'IBM Plex Sans',sans-serif;
-    border-radius:2px;
+    border-radius:3px;
     cursor:pointer;
   }
   .page-btn:disabled{opacity:0.4;cursor:not-allowed;}
@@ -324,7 +371,7 @@
     font-family:'IBM Plex Sans',sans-serif;
     font-weight:500;
     color:var(--blue);
-    background:#EAF1FE;
+    background:var(--blue-tint);
     padding:2px 7px;
     border-radius:10px;
     vertical-align:middle;
@@ -349,10 +396,7 @@
     margin-bottom:10px;
   }
 
-  .analytics{margin-top:36px;}
-  .analytics-head{margin-bottom:14px;}
-  .analytics-head h2{font-size:15px;font-weight:600;margin:0 0 3px;}
-  .analytics-head p{font-size:12.5px;color:var(--ink-soft);margin:0;}
+  .analytics{margin-top:40px;}
   .chart-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
@@ -361,32 +405,35 @@
   .chart-card{
     background:var(--paper-raised);
     border:1px solid var(--line);
-    border-radius:2px;
-    padding:16px 18px 18px;
+    border-radius:3px;
+    padding:18px 20px 20px;
   }
-  .chart-card h3{margin:0 0 12px;font-size:12.5px;font-weight:600;}
+  .chart-card h3{margin:0 0 14px;font-size:12.5px;font-weight:600;}
   .chart-placeholder p{margin:0;font-size:12.5px;color:var(--ink-soft);}
-  .chart-legend{display:flex;gap:14px;margin-bottom:12px;font-size:11.5px;color:var(--ink-soft);flex-wrap:wrap;}
+  .chart-legend{display:flex;gap:14px;margin-bottom:14px;font-size:11.5px;color:var(--ink-soft);flex-wrap:wrap;}
   .chart-legend-item{display:flex;align-items:center;gap:5px;}
   .chart-row{
     display:grid;
     grid-template-columns:140px 1fr 30px;
     align-items:center;
     gap:10px;
-    margin-bottom:7px;
+    margin-bottom:8px;
     font-size:12px;
+    padding:2px 4px;
+    border-radius:3px;
   }
+  .chart-row:hover{background:var(--raised-2);}
   .chart-label{color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .chart-bar-track{height:14px;border-radius:2px;background:var(--raised-2);overflow:hidden;}
+  .chart-bar-track{height:14px;border-radius:3px;background:var(--raised-2);overflow:hidden;}
   .chart-bar-fill-wrap{display:flex;height:100%;}
   .chart-bar-seg{height:100%;}
   .chart-total{font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);text-align:right;font-size:11.5px;}
   .chart-empty{font-size:12.5px;color:var(--ink-soft);margin:0;}
 
   .legend{
-    margin-top:8px;
+    margin-top:6px;
     font-size:11px;
-    color:var(--ink-soft);
+    color:var(--ink-faint);
     letter-spacing:0.02em;
   }
 
@@ -397,23 +444,31 @@
 <body>
 
 <header class="top">
-  <div class="top-row">
-    <div>
-      <h1>RTO Fraud Detection Engine</h1>
-      <p class="sub">Protecting seller trust, one verified delivery at a time.</p>
-    </div>
-    <div style="text-align:right;">
-      <div class="upload-group">
-        <label class="upload-btn" for="fileInput">Upload fraud analysis file</label>
-        <input type="file" id="fileInput" accept=".xlsx,.xls">
-        <label class="upload-btn secondary" for="fileInput2">Upload call data file</label>
-        <input type="file" id="fileInput2" accept=".xlsx,.xls">
+  <div class="container">
+    <div class="top-row">
+      <div>
+        <h1>RTO Fraud Detection Engine</h1>
+        <p class="sub">Protecting seller trust, one verified delivery at a time.</p>
       </div>
-      <div class="file-status" id="joinStatus"></div>
-      <div class="legend mono" id="legend"></div>
+      <div style="text-align:right;">
+        <div class="upload-group">
+          <label class="upload-btn" for="fileInput">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4L7 9M12 4l5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            Upload fraud analysis file
+          </label>
+          <input type="file" id="fileInput" accept=".xlsx,.xls">
+          <label class="upload-btn secondary" for="fileInput2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4L7 9M12 4l5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            Upload call data file
+          </label>
+          <input type="file" id="fileInput2" accept=".xlsx,.xls">
+        </div>
+        <div class="file-status" id="joinStatus"></div>
+        <div class="legend mono" id="legend"></div>
+      </div>
     </div>
+    <div class="stats" id="stats"></div>
   </div>
-  <div class="stats" id="stats"></div>
 </header>
 
 <main id="main">
@@ -522,11 +577,14 @@ function attachExtraFields(){
 }
 
 function updateJoinStatus(matched){
-  if (!inputLoaded){ joinStatusEl.textContent = ''; return; }
-  if (!rawRows.length){ joinStatusEl.textContent = 'Call data loaded — upload the fraud analysis file to join it.'; return; }
-  joinStatusEl.textContent = matched === rawRows.length
+  if (!inputLoaded){ joinStatusEl.innerHTML = ''; return; }
+  if (!rawRows.length){ joinStatusEl.innerHTML = '<span class="status-dot pending"></span>Call data loaded — upload the fraud analysis file to join it.'; return; }
+  const allMatched = matched === rawRows.length;
+  const dotClass = allMatched ? 'ok' : 'warn';
+  const msg = allMatched
     ? `Call data joined — matched all ${matched} rows.`
     : `Call data joined — matched ${matched} of ${rawRows.length} rows by shipment ID.`;
+  joinStatusEl.innerHTML = `<span class="status-dot ${dotClass}"></span>${msg}`;
 }
 
 function parseRows(rows){
@@ -748,7 +806,7 @@ function renderAnalyticsSection(){
   }
 
   return `<section class="analytics">
-    <div class="analytics-head">
+    <div class="section-head">
       <h2>Analytics</h2>
       <p>Reflects the shipments currently matching your filters.</p>
     </div>
@@ -771,10 +829,15 @@ function renderStats(){
   const total = groups.length;
   const byRisk = {};
   groups.forEach(g => byRisk[g.best.__risk] = (byRisk[g.best.__risk]||0) + 1);
-  let html = `<div class="stat"><span class="n">${total}</span><span class="l">shipments loaded</span></div>`;
-  Object.keys(byRisk).sort((a,b) => riskRank(b)-riskRank(a)).forEach(risk => {
-    html += `<div class="stat"><span class="dot" style="background:${riskColor(risk)}"></span><span class="n">${byRisk[risk]}</span><span class="l">${risk.toLowerCase()}</span></div>`;
-  });
+  let html = `<div class="stat-total"><span class="n">${total}</span><span class="l">shipments loaded</span></div>`;
+  const riskKeys = Object.keys(byRisk).sort((a,b) => riskRank(b)-riskRank(a));
+  if (riskKeys.length){
+    html += `<div class="stat-chips">`;
+    riskKeys.forEach(risk => {
+      html += `<span class="stat-chip ${riskClass(risk)}"><span class="n">${byRisk[risk]}</span>${risk.toLowerCase()}</span>`;
+    });
+    html += `</div>`;
+  }
   statsEl.innerHTML = total ? html : '';
 }
 
@@ -786,6 +849,10 @@ function render(){
   const riskOptions = [...new Set(rawRows.map(r => r.__risk))];
 
   let toolbarHtml = `
+    <div class="section-head">
+      <h2>Shipments</h2>
+      <p>One row per shipment, ranked by risk. Click a row to see every call attempt.</p>
+    </div>
     <div class="toolbar">
       <input type="text" id="searchInput" placeholder="Search shipment ID or summary" value="${search}">
       <select id="riskSelect">
@@ -856,8 +923,8 @@ function render(){
         <td style="font-size:12.5px;">${r.rto_reason || '\u2014'}</td>
         <td class="mono" style="font-size:12.5px;">${r.geo_distance_bucket || '\u2014'}</td>
       ` : '';
-      tableHtml += `<tr class="row" data-idx="${idx}">
-        <td class="id">${g.id}${g.attempts.length > 1 ? `<span class="attempts-badge">${g.attempts.length} attempts</span>` : ''}</td>
+      tableHtml += `<tr class="row${expandedRow === idx ? ' expanded' : ''}" data-idx="${idx}">
+        <td class="id"><span class="chevron">\u203a</span>${g.id}${g.attempts.length > 1 ? `<span class="attempts-badge">${g.attempts.length} attempts</span>` : ''}</td>
         <td><span class="risk-badge ${riskClass(risk)}">${risk}</span></td>
         <td>
           <div class="score-cell">
